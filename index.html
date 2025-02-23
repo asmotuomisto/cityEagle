@@ -20,15 +20,13 @@
         const eagle = new THREE.Group();
         const wingGeometry = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-            -20, 0, 0,  // Vasen leveä sivu
-            20, 0, 0,   // Oikea leveä sivu
-            -40, 0, 20, // Vasen kapeneva kärki
-            -20, 0, 0,  // Vasen leveä sivu uudelleen
-            20, 0, 0,   // Oikea leveä sivu uudelleen
-            40, 0, 20   // Oikea kapeneva kärki
+            -20, 0, 0,  // 0: Vasen leveä sivu (keskellä)
+            20, 0, 0,   // 1: Oikea leveä sivu (keskellä)
+            -40, 0, 20, // 2: Vasen kapeneva kärki
+            40, 0, 20   // 3: Oikea kapeneva kärki
         ]);
         wingGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-        wingGeometry.setIndex([0, 1, 2, 3, 4, 5]);
+        wingGeometry.setIndex([0, 1, 2, 1, 0, 3]);
         const eagleMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
         const wings = new THREE.Mesh(wingGeometry, eagleMaterial);
         eagle.add(wings);
@@ -55,25 +53,33 @@
 
         // Rakennukset
         let buildings = [];
+        const darkColors = [
+            0x333333, // Dark gray
+            0x1A2525, // Dark teal
+            0x2F1B41, // Dark purple
+            0x3C2F2F, // Dark brown
+            0x1F2A44  // Dark blue
+        ];
         function generateBuilding(zPosition) {
-            const isGiant = Math.random() < 0.05;
-            const isTall = !isGiant && Math.random() < 0.15;
+            const isGiant = Math.random() < 0.05; // 5% giant
+            const isTall = !isGiant && Math.random() < 0.60; // 60% medium if not giant
             let height, width, depth;
             if (isGiant) {
-                height = Math.random() * (450 - 300) + 300;
+                height = Math.random() * (450 - 300) + 300; // 300-450
                 width = Math.random() * 120 + 80;
                 depth = Math.random() * 120 + 80;
             } else if (isTall) {
-                height = Math.random() * (240 - 150) + 150;
+                height = Math.random() * (240 - 150) + 150; // 150-240
                 width = Math.random() * 80 + 40;
                 depth = Math.random() * 80 + 40;
             } else {
-                height = Math.random() * (150 - 40) + 40;
+                height = Math.random() * (150 - 80) + 80; // 80-150 (smaller, now ~35%)
                 width = Math.random() * 50 + 20;
                 depth = Math.random() * 50 + 20;
             }
             const geometry = new THREE.BoxGeometry(width, height, depth);
-            const material = new THREE.MeshBasicMaterial({ color: 0x333333 });
+            const randomColor = darkColors[Math.floor(Math.random() * darkColors.length)];
+            const material = new THREE.MeshBasicMaterial({ color: randomColor });
             const building = new THREE.Mesh(geometry, material);
             building.position.set(
                 Math.random() * (groundWidth - 100) - (groundWidth - 100) / 2,
@@ -114,7 +120,7 @@
             }
         }
 
-        // Kamera (alustetaan)
+        // Kamera
         camera.position.set(0, 250, 50);
         camera.lookAt(0, 200, 0);
 
@@ -142,8 +148,8 @@
             // Kotkan liike
             eagle.position.y -= descentRate;
             if (keys[' ']) {
-                eagleTargetY = eagle.position.y + flapHeight; // Uusi kohdekorkeus
-                eagleLerpTime = eagleLerpDuration; // Käynnistä 1s siirtymä
+                eagleTargetY = eagle.position.y + flapHeight;
+                eagleLerpTime = eagleLerpDuration;
                 keys[' '] = false;
             }
             if (keys['ArrowLeft']) angle -= 0.05;
@@ -154,9 +160,9 @@
 
             // Lennokin Y-akselin lerp
             if (eagleLerpTime > 0) {
-                eagleLerpTime -= 1 / 60; // Oletetaan 60 fps
-                const t = 1 - eagleLerpTime / eagleLerpDuration; // 0 -> 1 sekunnissa
-                eagle.position.y += (eagleTargetY - eagle.position.y) * t * 0.1; // Pehmeä siirtymä
+                eagleLerpTime -= 1 / 60;
+                const t = 1 - eagleLerpTime / eagleLerpDuration;
+                eagle.position.y += (eagleTargetY - eagle.position.y) * t * 0.1;
             }
 
             // Maan ja rakennusten liike
@@ -216,7 +222,7 @@
                 }
             });
 
-            // Kamera seuraa suoraan ilman lerp
+            // Kamera seuraa suoraan
             camera.position.set(eagle.position.x, eagle.position.y + 50, 50);
             camera.lookAt(eagle.position.x, eagle.position.y, 0);
 
